@@ -9,11 +9,11 @@ A MIDI looper for the monome norns.
 
 - E1 selects loop
 - K2/K3 selects loop
-- E2
-- E3 
+- K1+E2: change MIDI in device
+- K1+E3: change MIDI out device
 - K1+K2: toggle recording
 - K1+E3: toggle playback
-- hold K1+K2: erase 
+- hold K1+K2: erase
 - hold K1+E3: quantize
 
 ## Usage
