@@ -39,11 +39,11 @@ function init()
             end
         end
     end
-    table.insert(midi_names, "None")
+    table.insert(midi_names, "none")
 
     -- global parameters
     params:add_number("selected_loop", "Selected Loop", 1, global_num_loops, 1)
-    params:add_option("looper_midi_in_device", "MIDI In", midi_names, 2)
+    params:add_option("looper_midi_in_device", "MIDI In", midi_names, 1)
     params:add_number("looper_midi_in_channel", "MIDI In Channel", 1, 16, 1)
     -- midi augmentation 
     params:add_group("MIDI Out Augmentation", 16)
@@ -125,20 +125,7 @@ function key(k, v)
     if k == 1 then
         global_shift = v == 1
     else
-        if not global_shift then
-            if v == 1 then
-                local current_loop_new = params:get("selected_loop") + (k == 3 and 1 or -1)
-                if current_loop_new < 1 then
-                    current_loop_new = global_num_loops
-                elseif current_loop_new > global_num_loops then
-                    current_loop_new = 1
-                end
-                params:set("selected_loop", current_loop_new)
-            end
-        else
-
-            global_loops[params:get("selected_loop")]:key(k, v, global_shift)
-        end
+        global_loops[params:get("selected_loop")]:key(k, v, global_shift)
     end
 end
 
@@ -153,8 +140,10 @@ function enc(k, d)
             -- change output device
             params:delta("looper_" .. params:get("selected_loop") .. "_midi_device", d)
         end
-    else
+    elseif k==1 then 
         params:delta("selected_loop", d)
+    else
+        global_loops[params:get("selected_loop")]:enc(k, d)
     end
 end
 
@@ -162,9 +151,9 @@ function redraw()
     screen.clear()
 
     screen.level(global_shift and 15 or 3)
-    screen.move(64, 10)
-    screen.text_right("i: " .. params:string("looper_midi_in_device") .. " ch" ..
-                          params:string("looper_midi_in_channel"))
+    screen.move(128, 6)
+    -- screen.text_right(params:string("looper_midi_in_device") .. " ch" ..
+    --                       params:string("looper_midi_in_channel"))
 
     global_loops[params:get("selected_loop")]:redraw(global_shift)
 

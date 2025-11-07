@@ -296,7 +296,7 @@ function Looper:init()
 
     params:add_group("looper_" .. self.id, "Looper " .. self.id, 9)
     -- midi channelt to record on 
-    params:add_number("looper_" .. self.id .. "_beats", "Beats", 1, 64, self.id == 1 and 1 or 16)
+    params:add_number("looper_" .. self.id .. "_beats", "Beats", 1, 64, 16)
     params:set_action("looper_" .. self.id .. "_beats", function(value)
         self.total_beats = value * params:get("looper_" .. self.id .. "_bars")
     end)
@@ -312,21 +312,19 @@ function Looper:init()
             usb_midi = i
         end
     end
-    params:add_option("looper_" .. self.id .. "_midi_device", "MIDI Out", self.midi_names, usb_midi or 1)
+    params:add_option("looper_" .. self.id .. "_midi_device", "MIDI Out", self.midi_names, usb_midi or #self.midi_names)
     local midi_out_options = {}
     for i = 1, 16 do
         table.insert(midi_out_options, "" .. i)
     end
     table.insert(midi_out_options, "special")
     params:add_option("looper_" .. self.id .. "_midi_channel_out", "MIDI Out Channel", midi_out_options,
-        self.id == 1 and #midi_out_options or self.id - 1)
-    params:add_option("looper_" .. self.id .. "_recording_enable", "Recording", {"Disabled", "Enabled"},
-        self.id > 1 and 2 or 1)
+        self.id)
+    params:add_option("looper_" .. self.id .. "_recording_enable", "Recording", {"Disabled", "Enabled"}, 2)
     params:set_action("looper_" .. self.id .. "_recording_enable", function(value)
         self.record_queue = {}
     end)
-    params:add_option("looper_" .. self.id .. "_playback_enable", "Playback", {"Disabled", "Enabled"},
-        self.id > 1 and 2 or 1)
+    params:add_option("looper_" .. self.id .. "_playback_enable", "Playback", {"Disabled", "Enabled"},2)
     params:add_option("looper_" .. self.id .. "_quantize", "Quantization", {"1/32", "1/16", "1/8", "1/4"}, 1)
     params:add_control("looper_" .. self.id .. "_beat_tol", "Beat tolerance",
         controlspec.new(0.01, 2.0, 'lin', 0.0125, 0.5, 'beats', 0.0125 / (2.0 - 0.01)))
@@ -344,12 +342,12 @@ function Looper:enc(k, d)
 end
 
 function Looper:key(k, v, shift)
-    if not shift then
-        -- Keys do nothing when not shifted
-        self.key_hold_start[2] = nil
-        self.key_hold_start[3] = nil
-        return
-    end
+    -- if not shift then
+    --     -- Keys do nothing when not shifted
+    --     self.key_hold_start[2] = nil
+    --     self.key_hold_start[3] = nil
+    --     return
+    -- end
 
     -- Shifted key behavior
     print(k, v, shift)
@@ -361,7 +359,7 @@ function Looper:key(k, v, shift)
             -- Key released
             if self.key_hold_start[2] then
                 local hold_time = clock.get_beats() - self.key_hold_start[2]
-                if hold_time < (self.key_show_threshold + self.key_hold_threshold) then
+                if hold_time < (self.key_show_threshold + self.key_hold_threshold) and hold_time < 1 then
                     params:set("looper_" .. self.id .. "_recording_enable",
                         3 - params:get("looper_" .. self.id .. "_recording_enable"))
                 end
@@ -376,7 +374,8 @@ function Looper:key(k, v, shift)
             -- Key released
             if self.key_hold_start[3] then
                 local hold_time = clock.get_beats() - self.key_hold_start[3]
-                if hold_time < (self.key_show_threshold + self.key_hold_threshold) then
+                print("hold time for key 3:", hold_time)
+                if hold_time < (self.key_show_threshold + self.key_hold_threshold) and hold_time < 1 then
                     params:set("looper_" .. self.id .. "_playback_enable",
                         3 - params:get("looper_" .. self.id .. "_playback_enable"))
 
@@ -404,8 +403,8 @@ end
 function Looper:redraw(shift)
     local x, y = 0, 0
 
-    screen.move(1, 5)
-    screen.text(string.format("loop %d, %d/%d", self.id, 1 + math.floor(clock.get_beats() % self.total_beats),
+    screen.move(128, 5)
+    screen.text_right(string.format("loop %d, %d/%d", self.id, 1 + math.floor(clock.get_beats() % self.total_beats),
         self.total_beats))
 
     local x = util.round(128 * (clock.get_beats() % self.total_beats) / self.total_beats)
@@ -522,15 +521,10 @@ function Looper:redraw(shift)
     end
     -- Show normal rec button
     if params:get("looper_" .. self.id .. "_recording_enable") == 2 then
-        screen.level(shift and 15 or 5)
+        screen.level(5)
         screen.rect(x - 2, y - 7, 18, 11)
         screen.fill()
         screen.level(0)
-    elseif shift then
-        screen.level(5)
-        screen.rect(x - 2, y - 6, 18, 10)
-        screen.stroke()
-        screen.level(10)
     else
         screen.level(10)
     end
@@ -556,15 +550,10 @@ function Looper:redraw(shift)
         screen.blend_mode(0)
     end
     if params:get("looper_" .. self.id .. "_playback_enable") == 2 then
-        screen.level(shift and 15 or 5)
+        screen.level(5)
         screen.rect(x - 2, y - 7, 21, 11)
         screen.fill()
         screen.level(0)
-    elseif shift then
-        screen.level(5)
-        screen.rect(x - 2, y - 6, 21, 10)
-        screen.stroke()
-        screen.level(10)
     else
         screen.level(10)
     end
