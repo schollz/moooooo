@@ -1,21 +1,21 @@
 -- moooooo v0.1.0
+--     ^__^
+--     (oo)\______
+--     (__)\       )\/\
+--         ||----w |
+--         ||     ||
 --
---
--- llllllll.co/t/moooooo
---
---
---
---    ▼ instructions below ▼
---
--- E1 selects loop
--- K2/K3 selects loop
--- E2
--- E3 
--- K1+K2: toggle recording
--- K1+E3: toggle playback
--- hold K1+K2: erase 
--- hold K1+E3: quantize
--- 
+-- a midi looper 
+-- K1: shift
+-- K2: record, hold to erase
+-- K3: play, hold to quantize
+-- E1: change loop
+-- E2: change beats per bar
+-- E3: change bars
+-- K1+E2: change midi out
+-- K1+E3: change midi out ch
+
+
 looper_ = include("lib/looper")
 
 global_shift = false
@@ -39,7 +39,7 @@ function init()
             end
         end
     end
-    table.insert(midi_names, "none")
+    table.insert(midi_names, "None")
 
     -- global parameters
     params:add_number("selected_loop", "Selected Loop", 1, global_num_loops, 1)
@@ -130,30 +130,15 @@ function key(k, v)
 end
 
 function enc(k, d)
-    if global_shift then
-        if k == 1 then
-            global_loops[params:get("selected_loop")]:enc(k, d)
-        elseif k == 2 then
-            -- change input device
-            params:delta("looper_midi_in_device", d)
-        elseif k == 3 then
-            -- change output device
-            params:delta("looper_" .. params:get("selected_loop") .. "_midi_device", d)
-        end
-    elseif k==1 then 
+    if k==1 and global_shift==false then
         params:delta("selected_loop", d)
     else
-        global_loops[params:get("selected_loop")]:enc(k, d)
+        global_loops[params:get("selected_loop")]:enc(k, d, global_shift)
     end
 end
 
 function redraw()
     screen.clear()
-
-    screen.level(global_shift and 15 or 3)
-    screen.move(128, 6)
-    -- screen.text_right(params:string("looper_midi_in_device") .. " ch" ..
-    --                       params:string("looper_midi_in_channel"))
 
     global_loops[params:get("selected_loop")]:redraw(global_shift)
 
